@@ -6,12 +6,13 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Practice from "./pages/Practice";
+import Results from "./pages/Results";
 
 // 1. Define the items
 const navLinks = [
   { name: "Home", link: "/" },
   { name: "About", link: "/about" },
-  { name: "Practice", link: "/pactice" },
+  { name: "Practice", link: "/practice" },
 ];
 
 function App() {
@@ -24,8 +25,8 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />}/>
-          <Route path="/practice" element={<Practice />}
-          />
+          <Route path="/practice" element={<Practice />} />
+          <Route path="/results" element={<Results />} />
           {/* add more */}
         </Route>
       </Routes>

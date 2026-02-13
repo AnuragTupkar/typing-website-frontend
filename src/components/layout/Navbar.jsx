@@ -1,12 +1,22 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "../../lib/utils"; // Adjust path if needed
-import { Menu, X } from "lucide-react"; // npm install lucide-react
-import { NavLink } from "react-router-dom";
+import { Menu, X, LogOut, User } from "lucide-react"; // npm install lucide-react
+import { NavLink, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 const Navbar = ({ navItems = [], className }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const { user, token } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch({ type: 'auth/logout' });
+    navigate('/login');
+  };
 
   return (
     <div className={cn("fixed top-0 inset-x-0 z-50 px-4 py-4", className)}>
@@ -49,9 +59,22 @@ const Navbar = ({ navItems = [], className }) => {
 
         {/* Right Side Button */}
         <div className="hidden md:block">
-          <button className="bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
-            <NavLink to="/login">Login</NavLink>
-          </button>
+          {token ? (
+            <div className="flex items-center gap-4">
+               <span className="text-sm font-medium hidden lg:block">Hello, {user?.name || 'User'}</span>
+               <button 
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+               >
+                 <LogOut className="w-4 h-4" />
+                 Logout
+               </button>
+            </div>
+          ) : (
+            <button className="bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
+              <NavLink to="/login">Login</NavLink>
+            </button>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -77,13 +100,29 @@ const Navbar = ({ navItems = [], className }) => {
                 key={item.name}
                 to={item.link}
                 className="text-lg font-medium"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 {item.name}
               </NavLink>
             ))}
-            <button className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-bold">
-              <NavLink to="/login">Login</NavLink>
-            </button>
+            
+            {token ? (
+              <button 
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full bg-red-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-5 h-5" />
+                Logout
+              </button>
+            ) : (
+              <button className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-bold">
+                <NavLink to="/login" onClick={() => setMobileMenuOpen(false)}>Login</NavLink>
+              </button>
+            )}
+
           </motion.div>
         )}
       </AnimatePresence>
