@@ -130,7 +130,7 @@ const Practice = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] w-full bg-background overflow-hidden relative">
+    <div className="flex h-full w-full bg-background overflow-hidden relative">
       {/* Timer Overlay/Display */}
       <div className="absolute top-4 right-4 z-10 bg-card p-2 rounded-lg shadow border border-border">
         <span className={`text-xl font-bold font-mono ${timeLeft < 10 ? 'text-destructive' : 'text-primary'}`}>

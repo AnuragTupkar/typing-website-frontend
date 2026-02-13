@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0F172A] text-[#F1F5F9]">
+    <div className="h-full bg-[#0F172A] text-[#F1F5F9] overflow-y-auto">
       {/* Hero */}
-      <section className="min-h-screen flex flex-col items-center justify-center text-center px-4">
+      <section className="h-full flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
           Master Typing with Focus
         </h1>

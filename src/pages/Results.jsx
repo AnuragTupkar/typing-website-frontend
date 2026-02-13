@@ -9,7 +9,7 @@ const Results = () => {
     // In a real app, maybe fetch last session or redirect
     if (!state) {
         return (
-            <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] bg-background">
+            <div className="flex flex-col items-center justify-center h-full bg-background">
                 <h2 className="text-2xl font-bold mb-4 text-foreground">No results found</h2>
                 <button 
                     onClick={() => navigate('/practice')}
@@ -24,7 +24,7 @@ const Results = () => {
     const { wpm, accuracy, errorCount, duration } = state;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-background p-8">
+        <div className="flex flex-col items-center justify-center h-full bg-background p-8">
             <div className="max-w-2xl w-full bg-card border border-border rounded-xl shadow-lg p-8 md:p-12 animate-in fade-in zoom-in duration-300">
                 <h1 className="text-4xl font-bold text-center mb-12 text-foreground">Practice Results</h1>
                 

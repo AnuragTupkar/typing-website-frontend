@@ -19,8 +19,8 @@ const Navbar = ({ navItems = [], className }) => {
   };
 
   return (
-    <div className={cn("fixed top-0 inset-x-0 z-50 px-4 py-4", className)}>
-      <nav className="max-w-7xl mx-auto flex items-center justify-between bg-white/70 dark:bg-black/70 backdrop-blur-md border border-neutral-200 dark:border-white/10 rounded-full px-6 py-3 shadow-sm">
+    <div className={cn("fixed top-0 inset-x-0 z-50 px-4 py-2", className)}>
+      <nav className="max-w-7xl mx-auto flex items-center justify-between bg-white/70 dark:bg-black/70 backdrop-blur-md border border-neutral-200 dark:border-white/10 rounded-full px-6 py-2 shadow-sm">
         {/* Logo */}
         <NavLink to="/">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
@@ -32,6 +32,7 @@ const Navbar = ({ navItems = [], className }) => {
         <div className="hidden md:flex items-center gap-2 relative">
           {navItems.map((navItem, idx) => (
             <NavLink
+
               key={navItem.name}
               to={navItem.link}
               className="relative px-4 py-2 text-sm text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white transition-colors"
@@ -61,7 +62,7 @@ const Navbar = ({ navItems = [], className }) => {
         <div className="hidden md:block">
           {token ? (
             <div className="flex items-center gap-4">
-               <span className="text-sm font-medium hidden lg:block">Hello, {user?.name || 'User'}</span>
+
                <button 
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
