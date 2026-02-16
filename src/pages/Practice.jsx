@@ -1,36 +1,41 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { submitPracticeResult } from '../api/practiceApi';
-
-const PASSAGES = [
-  "The quick brown fox jumps over the lazy dog. It is a pangram, which means it uses every letter of the alphabet. Typing pangrams is a good way to practice your typing skills.",
-  "In the middle of difficulty lies opportunity. Einstein said this to remind us that challenges are often the gateway to new discoveries and personal growth. Embrace the struggle.",
-  "To be or not to be, that is the question. Whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles.",
-  "Success is not final, failure is not fatal: it is the courage to continue that counts. Winston Churchill understood that resilience is key to overcoming life's obstacles.",
-  "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle. As with all matters of the heart, you'll know when you find it."
-];
+import { generatePassage } from '../utils/textGenerator';
 
 const Practice = () => {
   const navigate = useNavigate();
   const [passage, setPassage] = useState("");
   const [input, setInput] = useState("");
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(420);
   const [isActive, setIsActive] = useState(false);
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
   const [errors, setErrors] = useState(0);
   const [startTime, setStartTime] = useState(null);
+  const [targetWpm, setTargetWpm] = useState(30);
   
   const timerRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
-    // Select a random passage
-    const randomIndex = Math.floor(Math.random() * PASSAGES.length);
-    setPassage(PASSAGES[randomIndex]);
-    // Focus input on mount
+    // Generate passage based on targetWpm
+    const wordCount = targetWpm * 7;
+    const newPassage = generatePassage(wordCount);
+    setPassage(newPassage);
+    
+    // Reset session
+    setInput("");
+    setTimeLeft(420); // 7 minutes
+    setIsActive(false);
+    setWpm(0);
+    setAccuracy(100);
+    setErrors(0);
+    if(timerRef.current) clearInterval(timerRef.current);
+    
+    // Focus input
     if(inputRef.current) inputRef.current.focus();
-  }, []);
+  }, [targetWpm]);
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
@@ -61,7 +66,7 @@ const Practice = () => {
 
     // WPM (Gross WPM: (all typed entries / 5) / time in minutes)
     // Time elapsed in minutes
-    const timeElapsed = (60 - timeLeft) / 60; 
+    const timeElapsed = (420 - timeLeft) / 60; 
     // Avoid division by zero
     const calculatedWpm = timeElapsed > 0 ? Math.round((currentInput.length / 5) / timeElapsed) : 0;
 
@@ -92,7 +97,7 @@ const Practice = () => {
     clearInterval(timerRef.current);
     
     // Final stats calculation
-    const timeSpent = 60 - timeLeft;
+    const timeSpent = 420 - timeLeft;
     const wordsTyped = finalInput.trim().split(/\s+/).length;
     let errorCount = 0;
     const passageChars = passage.split('');
@@ -140,8 +145,23 @@ const Practice = () => {
 
       {/* Left Section: Passage */}
       <div className="w-1/2 h-full p-8 md:p-12 lg:p-16 flex flex-col justify-center items-start border-r border-border bg-muted/30 select-none">
-        <h2 className="text-2xl font-bold mb-6 text-foreground/80">Passage to Type</h2>
-        <div className="text-lg md:text-xl lg:text-2xl leading-relaxed font-serif text-muted-foreground">
+        <div className="w-full flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-foreground/80">Passage to Type</h2>
+          <div className="flex items-center gap-2">
+             <label className="text-sm font-medium text-muted-foreground">Target WPM:</label>
+             <select 
+               value={targetWpm}
+               onChange={(e) => setTargetWpm(Number(e.target.value))}
+               className="h-9 w-20 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+             >
+               <option value={30}>30</option>
+               <option value={40}>40</option>
+               <option value={50}>50</option>
+               <option value={60}>60</option>
+             </select>
+          </div>
+        </div>
+        <div className="w-full flex-1 overflow-y-auto pr-4 text-lg md:text-sm lg:text-lg leading-relaxed font-serif text-muted-foreground">
           {passage.split('').map((char, index) => {
             let colorClass = "";
             const inputChar = input[index];

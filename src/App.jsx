@@ -9,6 +9,9 @@ import Register from "./pages/Register";
 import Practice from "./pages/Practice";
 import Results from "./pages/Results";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import About from "./pages/About";
+import Inquiries from "./pages/Inquiries";
 
 
 function App() {
@@ -18,7 +21,8 @@ function App() {
     { name: "Home", link: "/" },
     { name: "About", link: "/about" },
     { name: "Practice", link: "/practice" },
-    ...(user ? [{ name: "Dashboard", link: "/dashboard" }] : []),
+    ...(user && user.role === 'admin' ? [{ name: "Admin", link: "/admin" }, { name: "Inquiries", link: "/inquiries" }] : []),
+    ...(user && user.role !== 'admin' ? [{ name: "Dashboard", link: "/dashboard" }] : []),
   ];
 
   return (
@@ -34,6 +38,9 @@ function App() {
             <Route path="/practice" element={<Practice />} />
             <Route path="/results" element={<Results />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/inquiries" element={<Inquiries />} />
             {/* add more */}
           </Route>
         </Routes>

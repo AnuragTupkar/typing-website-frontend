@@ -41,7 +41,7 @@ export default function Login() {
       });
 
       setSuccess('Logged in successfully! Redirecting...');
-      setTimeout(() => navigate('/'), 1500);
+      setTimeout(() => navigate(user.role === 'admin' ? '/inquiries' : '/dashboard'), 1500);
     } catch (err) {
       setError(err?.data?.error || 'Invalid credentials or server error');
     } finally {
