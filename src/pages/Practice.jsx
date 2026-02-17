@@ -138,8 +138,8 @@ const Practice = () => {
     <div className="flex h-full w-full bg-background overflow-hidden relative">
       {/* Timer Overlay/Display */}
       <div className="absolute top-4 right-4 z-10 bg-card p-2 rounded-lg shadow border border-border">
-        <span className={`text-xl font-bold font-mono ${timeLeft < 10 ? 'text-destructive' : 'text-primary'}`}>
-          {timeLeft}s
+        <span className={`text-xl font-bold font-mono ${timeLeft < 60 ? 'text-destructive' : 'text-primary'}`}>
+          {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
         </span>
       </div>
 

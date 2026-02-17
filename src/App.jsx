@@ -12,6 +12,8 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import About from "./pages/About";
 import Inquiries from "./pages/Inquiries";
+import Admissions from "./pages/Admissions";
+import Utilities from "./pages/Utilities";
 
 
 function App() {
@@ -21,7 +23,7 @@ function App() {
     { name: "Home", link: "/" },
     { name: "About", link: "/about" },
     { name: "Practice", link: "/practice" },
-    ...(user && user.role === 'admin' ? [{ name: "Admin", link: "/admin" }, { name: "Inquiries", link: "/inquiries" }] : []),
+    ...(user && user.role === 'admin' ? [{ name: "Admin", link: "/admin" }, { name: "Inquiries", link: "/inquiries" }, { name: "Admissions", link: "/admissions" }, { name: "Utilities", link: "/utilities" }] : []),
     ...(user && user.role !== 'admin' ? [{ name: "Dashboard", link: "/dashboard" }] : []),
   ];
 
@@ -41,6 +43,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/about" element={<About />} />
             <Route path="/inquiries" element={<Inquiries />} />
+            <Route path="/admissions" element={<Admissions />} />
             {/* add more */}
           </Route>
         </Routes>
