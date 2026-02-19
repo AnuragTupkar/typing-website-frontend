@@ -68,3 +68,11 @@ export const getUserList = async () => {
     });
     return response.data;
 };
+
+// --- Students (full admission data with credentials) ---
+export const getAllStudents = async () => {
+    const response = await axios.get(`${API_URL}/admissions`, {
+        headers: getAuthHeader(),
+    });
+    return response.data;
+};

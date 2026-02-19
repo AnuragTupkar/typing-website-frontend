@@ -7,7 +7,8 @@ import {
   getAllFees, 
   createFee, 
   updateFee,
-  getUserList 
+  getUserList,
+  getAllStudents
 } from "../api/adminApi";
 
 import { FeeModal } from "../components/admin/FeeModal";
@@ -18,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Users, Activity, DollarSign, Calendar, Search, 
-  Plus, Filter, FileText, CheckCircle, XCircle, Clock
+  Plus, Filter, FileText, CheckCircle, XCircle, Clock,
+  GraduationCap, Eye, EyeOff, Copy, ChevronDown, ChevronUp
 } from "lucide-react";
 
 // Simple Tabs Component (since we don't have one in UI folder yet)
@@ -42,6 +44,26 @@ const TabsContent = ({ value, activeTab, children }) => {
   return <div className="animate-in fade-in-50 duration-300">{children}</div>;
 };
 
+// Password cell component
+const PasswordCell = ({ password }) => {
+  const [visible, setVisible] = useState(false);
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(password || "");
+    alert("Password copied!");
+  };
+  return (
+    <div className="flex items-center gap-1">
+      <span className="font-mono text-sm">{visible ? password : "••••••"}</span>
+      <button onClick={() => setVisible(!visible)} className="p-1 hover:bg-muted rounded">
+        {visible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+      </button>
+      <button onClick={copyToClipboard} className="p-1 hover:bg-muted rounded">
+        <Copy className="h-3 w-3" />
+      </button>
+    </div>
+  );
+};
+
 export default function AdminDashboard() {
   const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("overview");
@@ -50,10 +72,16 @@ export default function AdminDashboard() {
   const [attendanceData, setAttendanceData] = useState([]);
   const [feesData, setFeesData] = useState([]);
   const [users, setUsers] = useState([]);
+  const [studentsData, setStudentsData] = useState([]);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [batchFilter, setBatchFilter] = useState("all");
+
+  // Expanded student
+  const [expandedStudent, setExpandedStudent] = useState(null);
 
   // Fee Modal State
   const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
@@ -64,6 +92,7 @@ export default function AdminDashboard() {
     // Always fetch overview stats initially
     fetchOverview();
 
+    if (activeTab === "students") fetchStudents();
     if (activeTab === "performance") fetchPerformance();
     if (activeTab === "attendance") fetchAttendance();
     if (activeTab === "fees") {
@@ -78,6 +107,15 @@ export default function AdminDashboard() {
       setStats(data.data);
     } catch (error) {
       console.error("Failed to fetch stats", error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const data = await getAllStudents();
+      setStudentsData(data.data || []);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -137,14 +175,35 @@ export default function AdminDashboard() {
   const getFilteredData = (data, fields = ["name", "email"]) => {
     return data.filter(item => {
       const matchesSearch = fields.some(field => 
-        (item[field] || item.userId?.[field] || "").toLowerCase().includes(searchTerm)
+        (item[field] || item.userId?.[field] || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
       if (statusFilter === "all") return matchesSearch;
       
       // Handle status filter per tab
       if (activeTab === "fees") return matchesSearch && item.status === statusFilter;
-      // You can add more specific status logic for other tabs if needed
       return matchesSearch;
+    });
+  };
+
+  // Students filter (special — also filters by course & batch)
+  const getFilteredStudents = () => {
+    return studentsData.filter(s => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        (s.firstName || "").toLowerCase().includes(search) ||
+        (s.surname || "").toLowerCase().includes(search) ||
+        (s.mobile || "").includes(search) ||
+        (s.grNo || "").toLowerCase().includes(search) ||
+        (s.loginUsername || "").toLowerCase().includes(search) ||
+        (s.adharNo || "").includes(search);
+
+      const matchesCourse = courseFilter === "all" || 
+        (s.selectedCourses || []).includes(courseFilter);
+
+      const matchesBatch = batchFilter === "all" || 
+        (s.batchTime || []).includes(batchFilter);
+
+      return matchesSearch && matchesCourse && matchesBatch;
     });
   };
 
@@ -167,9 +226,10 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs activeTab={activeTab} onTabChange={setActiveTab}>
-        <div className="w-full md:w-[400px]">
+        <div className="w-full md:w-[550px]">
           <TabsList>
             <TabsTrigger value="overview" activeTab={activeTab} onClick={setActiveTab}>Overview</TabsTrigger>
+            <TabsTrigger value="students" activeTab={activeTab} onClick={setActiveTab}>Students</TabsTrigger>
             <TabsTrigger value="performance" activeTab={activeTab} onClick={setActiveTab}>Performance</TabsTrigger>
             <TabsTrigger value="attendance" activeTab={activeTab} onClick={setActiveTab}>Attendance</TabsTrigger>
             <TabsTrigger value="fees" activeTab={activeTab} onClick={setActiveTab}>Fees</TabsTrigger>
@@ -189,8 +249,16 @@ export default function AdminDashboard() {
                 <p className="text-xs text-muted-foreground">{stats?.activeUsers || 0} active</p>
               </CardContent>
             </Card>
-           
-            {/* You could add Total Fees here if endpoint returned it in stats */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Admissions</CardTitle>
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{studentsData.length || 0}</div>
+                <p className="text-xs text-muted-foreground">registered students</p>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -200,35 +268,207 @@ export default function AdminDashboard() {
              <div className="relative w-full md:w-[300px]">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search students..."
+                  placeholder={activeTab === "students" ? "Search name, GR No, mobile, username..." : "Search students..."}
                   className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
              </div>
              
-             <div className="flex gap-2 w-full md:w-auto">
-               {activeTab === "fees" && (
-                 <select 
-                   className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                   value={statusFilter}
-                   onChange={(e) => setStatusFilter(e.target.value)}
-                 >
-                   <option value="all">All Status</option>
-                   <option value="paid">Paid</option>
-                   <option value="unpaid">Unpaid</option>
-                   <option value="partial">Partial</option>
-                 </select>
+             <div className="flex gap-2 w-full md:w-auto flex-wrap">
+               {activeTab === "students" && (
+                 <>
+                   <select 
+                     className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                     value={courseFilter}
+                     onChange={(e) => setCourseFilter(e.target.value)}
+                   >
+                     <option value="all">All Courses</option>
+                     <option value="english_30">English 30 WPM</option>
+                     <option value="english_40">English 40 WPM</option>
+                     <option value="english_50">English 50 WPM</option>
+                     <option value="marathi_30">Marathi 30 WPM</option>
+                     <option value="marathi_40">Marathi 40 WPM</option>
+                     <option value="hindi_30">Hindi 30 WPM</option>
+                     <option value="hindi_40">Hindi 40 WPM</option>
+                   </select>
+                   <select 
+                     className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                     value={batchFilter}
+                     onChange={(e) => setBatchFilter(e.target.value)}
+                   >
+                     <option value="all">All Batches</option>
+                     <option value="10am-11am">10am-11am</option>
+                     <option value="11am-12pm">11am-12pm</option>
+                     <option value="4pm-5pm">4pm-5pm</option>
+                     <option value="5pm-6pm">5pm-6pm</option>
+                     <option value="6pm-7pm">6pm-7pm</option>
+                     <option value="7pm-8pm">7pm-8pm</option>
+                     <option value="8pm-9pm">8pm-9pm</option>
+                     <option value="9pm-10pm">9pm-10pm</option>
+                   </select>
+                 </>
                )}
-               
+
                {activeTab === "fees" && (
-                 <Button onClick={() => { setEditingFee(null); setIsFeeModalOpen(true); }}>
-                   <Plus className="mr-2 h-4 w-4" /> Add Fee
-                 </Button>
+                 <>
+                   <select 
+                     className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                     value={statusFilter}
+                     onChange={(e) => setStatusFilter(e.target.value)}
+                   >
+                     <option value="all">All Status</option>
+                     <option value="paid">Paid</option>
+                     <option value="unpaid">Unpaid</option>
+                     <option value="partial">Partial</option>
+                   </select>
+                   <Button onClick={() => { setEditingFee(null); setIsFeeModalOpen(true); }}>
+                     <Plus className="mr-2 h-4 w-4" /> Add Fee
+                   </Button>
+                 </>
                )}
              </div>
           </div>
         )}
+
+        {/* --- Students Tab --- */}
+        <TabsContent value="students" activeTab={activeTab}>
+          <div className="border rounded-md overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead></TableHead>
+                  <TableHead>GR No</TableHead>
+                  <TableHead>Student Name</TableHead>
+                  <TableHead>Mobile</TableHead>
+                  <TableHead>Courses</TableHead>
+                  <TableHead>Batch Time</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Password</TableHead>
+                  <TableHead>Admission Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {getFilteredStudents().length === 0 ? (
+                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No students found</TableCell></TableRow>
+                ) : (
+                  getFilteredStudents().map((s) => (
+                    <React.Fragment key={s._id}>
+                      <TableRow 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setExpandedStudent(expandedStudent === s._id ? null : s._id)}
+                      >
+                        <TableCell className="w-8">
+                          {expandedStudent === s._id 
+                            ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> 
+                            : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        </TableCell>
+                        <TableCell className="font-mono font-bold">{s.grNo}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{s.firstName} {s.surname}</div>
+                        </TableCell>
+                        <TableCell className="text-sm">{s.mobile}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(s.selectedCourses || []).map(c => (
+                              <Badge key={c} variant="outline" className="text-xs">{c.replace('_', ' ').toUpperCase()}</Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(Array.isArray(s.batchTime) ? s.batchTime : s.batchTime ? [s.batchTime] : []).map(b => (
+                              <Badge key={b} variant="secondary" className="text-xs">{b}</Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <code className="bg-muted px-2 py-0.5 rounded text-sm">{s.loginUsername || "-"}</code>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <PasswordCell password={s.loginPassword} />
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {s.admissionDate ? new Date(s.admissionDate).toLocaleDateString("en-IN") : "-"}
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Expanded Detail Row */}
+                      {expandedStudent === s._id && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="bg-muted/30 p-0">
+                            <div className="p-6 space-y-4">
+                              <h3 className="font-semibold text-base border-b pb-2">Complete Student Information</h3>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+                                {/* Personal */}
+                                <div><span className="text-muted-foreground block text-xs">Surname</span><span className="font-medium">{s.surname || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">First Name</span><span className="font-medium">{s.firstName || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Father's Name</span><span className="font-medium">{s.fatherName || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Mother's Name</span><span className="font-medium">{s.motherName || "-"}</span></div>
+
+                                {/* Contact */}
+                                <div><span className="text-muted-foreground block text-xs">Mobile</span><span className="font-medium">{s.mobile || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Parent Mobile</span><span className="font-medium">{s.parentMobile || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Email</span><span className="font-medium">{s.email || "-"}</span></div>
+                                <div className="md:col-span-2"><span className="text-muted-foreground block text-xs">Address</span><span className="font-medium">{s.address || "-"}</span></div>
+
+                                {/* Academic & Identity */}
+                                <div><span className="text-muted-foreground block text-xs">School / College</span><span className="font-medium">{s.schoolName || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Qualification</span><span className="font-medium">{s.qualification || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Adhar Card No.</span><span className="font-medium font-mono">{s.adharNo || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Date of Birth</span><span className="font-medium">{s.dob ? new Date(s.dob).toLocaleDateString("en-IN") : "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Handicapped</span><span className="font-medium">{s.handicapped ? "Yes" : "No"}</span></div>
+
+                                {/* Office Use */}
+                                <div><span className="text-muted-foreground block text-xs">G.R. No</span><span className="font-medium font-mono font-bold">{s.grNo || "-"}</span></div>
+                                <div><span className="text-muted-foreground block text-xs">Admission Date</span><span className="font-medium">{s.admissionDate ? new Date(s.admissionDate).toLocaleDateString("en-IN") : "-"}</span></div>
+
+                                {/* Credentials */}
+                                <div><span className="text-muted-foreground block text-xs">Login Username</span><code className="bg-muted px-2 py-0.5 rounded text-sm">{s.loginUsername || "-"}</code></div>
+                                <div onClick={(e) => e.stopPropagation()}><span className="text-muted-foreground block text-xs">Login Password</span><PasswordCell password={s.loginPassword} /></div>
+                              </div>
+
+                              {/* Courses & Docs */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1">Selected Courses</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {(s.selectedCourses || []).length > 0 
+                                      ? s.selectedCourses.map(c => <Badge key={c} variant="outline">{c.replace('_', ' ').toUpperCase()}</Badge>)
+                                      : <span className="text-sm text-muted-foreground">None</span>}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1">Batch Time(s)</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {(Array.isArray(s.batchTime) ? s.batchTime : s.batchTime ? [s.batchTime] : []).length > 0
+                                      ? (Array.isArray(s.batchTime) ? s.batchTime : [s.batchTime]).map(b => <Badge key={b} variant="secondary">{b}</Badge>)
+                                      : <span className="text-sm text-muted-foreground">None</span>}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground text-xs block mb-1">Submitted Documents</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {(s.submittedDocuments || []).length > 0
+                                      ? s.submittedDocuments.map(d => <Badge key={d} variant="outline">{d.replace('_', ' ').toUpperCase()}</Badge>)
+                                      : <span className="text-sm text-muted-foreground">None</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            Showing {getFilteredStudents().length} of {studentsData.length} students
+          </div>
+        </TabsContent>
 
         {/* --- Performance Tab --- */}
         <TabsContent value="performance" activeTab={activeTab}>

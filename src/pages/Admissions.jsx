@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Loader2, FileText, Download } from "lucide-react";
 
+const sameAddress = "Satara Parisar, Chatrapati Sambhaji Nagar, Maharashtra"
+const addressSuggestion =[`Satara Tanda, SRPF Camp, ${sameAddress}`,`Satara Gaon, ${sameAddress}`, `High Court Colony, ${sameAddress}`, `Kothrud, ${sameAddress}`, `Lakshmi colony, ${sameAddress}`, `Beed by pass ${sameAddress}`, `Thakre nagar ${sameAddress}`,`Mahada Colony ${sameAddress}`]
 const COURSES = [
     { id: 'english_30', label: 'English 30 WPM' },
     { id: 'english_40', label: 'English 40 WPM' },
@@ -86,8 +88,13 @@ const AdmissionForm = ({ onSuccess }) => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await createAdmission(form);
-            alert("Admission confirmed successfully!");
+            const res = await createAdmission(form);
+            const creds = res?.credentials;
+            if (creds) {
+                alert(`Admission confirmed!\n\nStudent Login Credentials:\nUsername: ${creds.username}\nPassword: ${creds.password}\n\nPlease share these with the student.`);
+            } else {
+                alert("Admission confirmed successfully!");
+            }
             onSuccess();
             setForm({
                 surname: "", firstName: "", fatherName: "", motherName: "",
