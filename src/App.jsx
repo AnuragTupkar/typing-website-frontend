@@ -44,6 +44,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/inquiries" element={<Inquiries />} />
             <Route path="/admissions" element={<Admissions />} />
+            <Route path="/utilities" element={<Utilities />} />
             {/* add more */}
           </Route>
         </Routes>

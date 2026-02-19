@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { createAdmission, getAllAdmissions, deleteAdmission } from "../api/admissionApi";
 import { generateAdmissionPDF } from "../utils/admissionPdfGenerator";
@@ -31,6 +31,19 @@ const TIME_SLOTS = [
 const AdmissionForm = ({ onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [batchDropdownOpen, setBatchDropdownOpen] = useState(false);
+    const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+    const addressRef = useRef(null);
+
+    // Close address suggestions on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (addressRef.current && !addressRef.current.contains(e.target)) {
+                setShowAddressSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     const [form, setForm] = useState({
         surname: "", firstName: "", fatherName: "", motherName: "",
         mobile: "", parentMobile: "", email: "", address: "",
@@ -147,9 +160,42 @@ const AdmissionForm = ({ onSuccess }) => {
                     <Label>Email ID</Label>
                     <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="student@example.com" />
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2 md:col-span-2 relative" ref={addressRef}>
                     <Label>Permanent Address</Label>
-                    <Input name="address" value={form.address} onChange={handleChange} required placeholder="Full Address" />
+                    <Input 
+                        name="address" 
+                        value={form.address} 
+                        onChange={(e) => {
+                            handleChange(e);
+                            setShowAddressSuggestions(true);
+                        }}
+                        onFocus={() => setShowAddressSuggestions(true)}
+                        required 
+                        placeholder="Start typing address..." 
+                        autoComplete="off"
+                    />
+                    {showAddressSuggestions && form.address.length > 0 && (() => {
+                        const filtered = addressSuggestion.filter(a => 
+                            a.toLowerCase().includes(form.address.toLowerCase())
+                        );
+                        if (filtered.length === 0) return null;
+                        return (
+                            <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                {filtered.map((addr, i) => (
+                                    <div
+                                        key={i}
+                                        className="px-3 py-2 text-sm hover:bg-muted cursor-pointer border-b last:border-b-0"
+                                        onClick={() => {
+                                            setForm(prev => ({ ...prev, address: addr }));
+                                            setShowAddressSuggestions(false);
+                                        }}
+                                    >
+                                        {addr}
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* Academic */}
