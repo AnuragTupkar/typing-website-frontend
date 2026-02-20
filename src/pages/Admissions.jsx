@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { createAdmission, getAllAdmissions, deleteAdmission } from "../api/admissionApi";
+import { createAdmission, getAllAdmissions, deleteAdmission, getSlotAvailability } from "../api/admissionApi";
 import { generateAdmissionPDF } from "../utils/admissionPdfGenerator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,16 +23,23 @@ const COURSES = [
     { id: 'hindi_40', label: 'Hindi 40 WPM' }
 ];
 
-const TIME_SLOTS = [
-    '10am-11am', '11am-12pm', '4pm-5pm', '5pm-6pm',
-    '6pm-7pm', '7pm-8pm', '8pm-9pm', '9pm-10pm'
-];
-
 const AdmissionForm = ({ onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [batchDropdownOpen, setBatchDropdownOpen] = useState(false);
     const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+    const [slotData, setSlotData] = useState([]);
     const addressRef = useRef(null);
+
+    // Fetch slot availability on mount
+    useEffect(() => {
+        const fetchSlots = async () => {
+            try {
+                const res = await getSlotAvailability();
+                if (res.success) setSlotData(res.data);
+            } catch (err) { console.error('Failed to fetch slot availability', err); }
+        };
+        fetchSlots();
+    }, []);
 
     // Close address suggestions on outside click
     useEffect(() => {
@@ -45,6 +52,7 @@ const AdmissionForm = ({ onSuccess }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
     const [form, setForm] = useState({
+        admissionType: "course",
         surname: "", firstName: "", fatherName: "", motherName: "",
         mobile: "", parentMobile: "", email: "", address: "",
         schoolName: "", qualification: "",
@@ -99,9 +107,21 @@ const AdmissionForm = ({ onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate at least 1 course
+        if (form.selectedCourses.length < 1) {
+            alert('Please select at least 1 course');
+            return;
+        }
+
         setSubmitting(true);
         try {
-            const res = await createAdmission(form);
+            const submitData = { ...form };
+            // Remove grNo for practice admissions
+            if (submitData.admissionType === 'practice') {
+                delete submitData.grNo;
+            }
+            const res = await createAdmission(submitData);
             const creds = res?.credentials;
             if (creds) {
                 alert(`Admission confirmed!\n\nStudent Login Credentials:\nUsername: ${creds.username}\nPassword: ${creds.password}\n\nPlease share these with the student.`);
@@ -110,6 +130,7 @@ const AdmissionForm = ({ onSuccess }) => {
             }
             onSuccess();
             setForm({
+                admissionType: "course",
                 surname: "", firstName: "", fatherName: "", motherName: "",
                 mobile: "", parentMobile: "", email: "", address: "",
                 schoolName: "", qualification: "",
@@ -129,6 +150,21 @@ const AdmissionForm = ({ onSuccess }) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* Admission Type */}
+                <div className="space-y-2 md:col-span-2">
+                    <Label>Admission Type</Label>
+                    <select
+                        name="admissionType"
+                        value={form.admissionType}
+                        onChange={handleChange}
+                        className="w-full p-2 border rounded-md text-sm bg-background"
+                    >
+                        <option value="course">Course</option>
+                        <option value="practice">Practice</option>
+                    </select>
+                </div>
+
                 {/* Personal */}
                 <div className="space-y-2">
                     <Label>Surname</Label>
@@ -229,15 +265,19 @@ const AdmissionForm = ({ onSuccess }) => {
                     <Label htmlFor="handicapped">Handicapped?</Label>
                 </div>
 
-                {/* Office Use */}
-                <div className="space-y-2">
-                    <Label>G.R. No (General Register)</Label>
-                    <Input name="grNo" value={form.grNo} onChange={handleChange} required placeholder="Unique ID" />
-                </div>
+                {/* Office Use — GR No (hidden for practice) */}
+                {form.admissionType !== 'practice' && (
+                    <div className="space-y-2">
+                        <Label>G.R. No (General Register)</Label>
+                        <Input name="grNo" value={form.grNo} onChange={handleChange} required placeholder="Unique ID" />
+                    </div>
+                )}
                 <div className="space-y-2">
                     <Label>Date of Admission</Label>
                     <Input name="admissionDate" type="date" value={form.admissionDate} onChange={handleChange} required />
                 </div>
+
+                {/* Batch Time — with availability */}
                 <div className="space-y-2 relative">
                     <Label>Batch Time(s)</Label>
                     <div
@@ -251,17 +291,39 @@ const AdmissionForm = ({ onSuccess }) => {
                     </div>
                     {batchDropdownOpen && (
                         <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                            {TIME_SLOTS.map(slot => (
-                                <label key={slot} className="flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.batchTime.includes(slot)}
-                                        onChange={() => handleBatchTimeChange(slot)}
-                                        className="h-4 w-4"
-                                    />
-                                    {slot}
+                            {slotData.length > 0 ? slotData.map(s => (
+                                <label
+                                    key={s.slot}
+                                    className={`flex items-center justify-between gap-2 px-3 py-2 text-sm border-b last:border-b-0 ${s.isFull ? 'opacity-40 cursor-not-allowed bg-muted/30' : 'hover:bg-muted cursor-pointer'}`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={form.batchTime.includes(s.slot)}
+                                            onChange={() => !s.isFull && handleBatchTimeChange(s.slot)}
+                                            disabled={s.isFull}
+                                            className="h-4 w-4"
+                                        />
+                                        {s.slot}
+                                    </div>
+                                    <span className={`text-xs font-medium ${s.isFull ? 'text-red-500' : 'text-muted-foreground'}`}>
+                                        {s.isFull ? 'FULL' : `${s.count}/${s.max}`}
+                                    </span>
                                 </label>
-                            ))}
+                            )) : (
+                                // Fallback if slot data not loaded
+                                ['10am-11am', '11am-12pm', '4pm-5pm', '5pm-6pm', '6pm-7pm', '7pm-8pm', '8pm-9pm', '9pm-10pm'].map(slot => (
+                                    <label key={slot} className="flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={form.batchTime.includes(slot)}
+                                            onChange={() => handleBatchTimeChange(slot)}
+                                            className="h-4 w-4"
+                                        />
+                                        {slot}
+                                    </label>
+                                ))
+                            )}
                         </div>
                     )}
                 </div>
@@ -269,7 +331,9 @@ const AdmissionForm = ({ onSuccess }) => {
 
             {/* Courses */}
             <div className="pt-4 border-t">
-                <Label className="text-base font-semibold mb-2 block">Select Courses</Label>
+                <Label className="text-base font-semibold mb-2 block">
+                    Select Courses <span className="text-red-500 text-sm font-normal">(min 1 required)</span>
+                </Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {COURSES.map(course => (
                         <div key={course.id} className="flex items-center space-x-2">

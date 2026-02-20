@@ -10,6 +10,7 @@ import {
   getUserList,
   getAllStudents
 } from "../api/adminApi";
+import { getSlotAvailability, updateAdmission } from "../api/admissionApi";
 
 import { FeeModal } from "../components/admin/FeeModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { 
   Users, Activity, DollarSign, Calendar, Search, 
   Plus, Filter, FileText, CheckCircle, XCircle, Clock,
-  GraduationCap, Eye, EyeOff, Copy, ChevronDown, ChevronUp
+  GraduationCap, Eye, EyeOff, Copy, ChevronDown, ChevronUp, RefreshCw
 } from "lucide-react";
 
 // Simple Tabs Component (since we don't have one in UI folder yet)
@@ -87,12 +88,19 @@ export default function AdminDashboard() {
   const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
   const [editingFee, setEditingFee] = useState(null);
 
+  // Batch Change State
+  const [slotData, setSlotData] = useState([]);
+  const [changingBatchFor, setChangingBatchFor] = useState(null); // student _id
+
   // Fetch Data based on Tab
   useEffect(() => {
     // Always fetch overview stats initially
     fetchOverview();
 
-    if (activeTab === "students") fetchStudents();
+    if (activeTab === "students") {
+      fetchStudents();
+      fetchBatches();
+    }
     if (activeTab === "performance") fetchPerformance();
     if (activeTab === "attendance") fetchAttendance();
     if (activeTab === "fees") {
@@ -114,6 +122,15 @@ export default function AdminDashboard() {
     try {
       const data = await getAllStudents();
       setStudentsData(data.data || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchBatches = async () => {
+    try {
+      const res = await getSlotAvailability();
+      setSlotData(res.data || []);
     } catch (error) {
       console.error(error);
     }
@@ -453,6 +470,61 @@ export default function AdminDashboard() {
                                       ? s.submittedDocuments.map(d => <Badge key={d} variant="outline">{d.replace('_', ' ').toUpperCase()}</Badge>)
                                       : <span className="text-sm text-muted-foreground">None</span>}
                                   </div>
+                                </div>
+                              </div>
+
+                              {/* Batch Change */}
+                              <div className="pt-2 border-t">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <span className="text-muted-foreground text-xs">Change Batch:</span>
+                                  {changingBatchFor === s._id ? (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      {slotData.length > 0 ? slotData.map(slot => (
+                                        <Button
+                                          key={slot.slot}
+                                          size="sm"
+                                          variant={slot.isFull ? "ghost" : "outline"}
+                                          disabled={slot.isFull}
+                                          className={`text-xs ${slot.isFull ? 'opacity-40' : ''} ${(s.batchTime || []).includes(slot.slot) ? 'ring-2 ring-primary' : ''}`}
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            if (slot.isFull) return;
+                                            try {
+                                              await updateAdmission(s._id, { batchTime: [slot.slot] });
+                                              alert(`Batch changed to ${slot.slot}`);
+                                              fetchStudents();
+                                              fetchBatches();
+                                              setChangingBatchFor(null);
+                                            } catch (err) {
+                                              alert(err.response?.data?.error || 'Failed to change batch');
+                                            }
+                                          }}
+                                        >
+                                          {slot.slot} ({slot.count}/{slot.max})
+                                          {slot.isFull && ' FULL'}
+                                        </Button>
+                                      )) : (
+                                        <span className="text-xs text-muted-foreground">Loading slots...</span>
+                                      )}
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="text-xs"
+                                        onClick={(e) => { e.stopPropagation(); setChangingBatchFor(null); }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs gap-1"
+                                      onClick={(e) => { e.stopPropagation(); setChangingBatchFor(s._id); }}
+                                    >
+                                      <RefreshCw className="h-3 w-3" /> Change Batch
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </div>

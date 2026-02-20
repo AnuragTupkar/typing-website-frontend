@@ -27,3 +27,17 @@ export const deleteAdmission = async (id) => {
     });
     return response.data;
 };
+
+export const getSlotAvailability = async () => {
+    const response = await axios.get(`${API_URL}/admissions/slots`, {
+        headers: getAuthHeader()
+    });
+    return response.data;
+};
+
+export const updateAdmission = async (id, data) => {
+    const response = await axios.put(`${API_URL}/admissions/${id}`, data, {
+        headers: getAuthHeader()
+    });
+    return response.data;
+};

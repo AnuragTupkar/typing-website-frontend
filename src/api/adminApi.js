@@ -76,3 +76,18 @@ export const getAllStudents = async () => {
     });
     return response.data;
 };
+
+// --- Batches ---
+export const getAvailableBatches = async () => {
+    const response = await axios.get(`${API_URL}/batches/available`, {
+        headers: getAuthHeader(),
+    });
+    return response.data;
+};
+
+export const changeStudentBatch = async (toBatchId, studentId, fromBatchId) => {
+    const response = await axios.post(`${API_URL}/batches/${toBatchId}/change-batch`, { studentId, fromBatchId }, {
+        headers: getAuthHeader(),
+    });
+    return response.data;
+};

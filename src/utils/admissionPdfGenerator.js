@@ -41,19 +41,20 @@ export const generateAdmissionPDF = (data) => {
     doc.setFont("helvetica", "bold");
     doc.text("\u2022 ADMISSION FORM \u2022", pw / 2, 48, { align: "center" });
 
-    // ── G.R. No. box ──
-    doc.setFillColor(200, 30, 30);
-    doc.rect(168, 43, 32, 6, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.text("G.R. No.", 184, 47.5, { align: "center" });
-    doc.setDrawColor(180);
-    doc.rect(168, 49, 32, 8);
-    doc.setTextColor(0);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(String(data.grNo ?? ""), 184, 55, { align: "center" });
-
+    // ── G.R. No. box (skip for practice admissions) ──
+    if (data.admissionType !== 'practice') {
+        doc.setFillColor(200, 30, 30);
+        doc.rect(168, 43, 32, 6, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.text("G.R. No.", 184, 47.5, { align: "center" });
+        doc.setDrawColor(180);
+        doc.rect(168, 49, 32, 8);
+        doc.setTextColor(0);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(String(data.grNo ?? ""), 184, 55, { align: "center" });
+    }
     // ══════════════════════════════════════════════════════════
     //  FORM BODY
     // ══════════════════════════════════════════════════════════

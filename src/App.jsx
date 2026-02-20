@@ -16,8 +16,12 @@ import Admissions from "./pages/Admissions";
 import Utilities from "./pages/Utilities";
 
 
+import { useLocation } from "react-router-dom";
+
 function App() {
   const { user } = useSelector((state) => state.auth);
+  const location = useLocation();
+  const isFullscreen = location.pathname === '/practice' || location.pathname === '/results';
 
   const navLinks = [
     { name: "Home", link: "/" },
@@ -29,8 +33,8 @@ function App() {
 
   return (
     <>
-      <Navbar navItems={navLinks} />
-      <main className="pt-14 h-screen overflow-y-auto">
+      {!isFullscreen && <Navbar navItems={navLinks} />}
+      <main className={`${isFullscreen ? '' : 'pt-14'} h-screen overflow-y-auto`}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

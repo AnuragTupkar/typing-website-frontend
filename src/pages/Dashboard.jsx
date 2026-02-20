@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area
 } from 'recharts';
-import { Activity, Trophy, Target, Clock, TrendingUp, AlertTriangle, Hash, CalendarCheck, Loader2, Timer, CheckCircle } from 'lucide-react';
+import { Activity, Trophy, Target, Clock, TrendingUp, AlertTriangle, Hash, CalendarCheck, Loader2, Timer, CheckCircle, Star, Award } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getMyStats, getMyHistory } from '../api/practiceApi';
 import { sendHeartbeat, getTodayAttendance, getAttendanceSummary } from '../api/attendanceApi';
@@ -104,6 +104,8 @@ const Dashboard = () => {
     { label: "Average WPM", value: stats?.avgWpm ?? 0, icon: Activity, color: "text-blue-500" },
     { label: "Best WPM", value: stats?.bestWpm ?? 0, icon: Trophy, color: "text-yellow-500" },
     { label: "Avg Accuracy", value: `${stats?.avgAccuracy ?? 0}%`, icon: Target, color: "text-green-500" },
+    { label: "Avg Marks", value: `${stats?.avgMarks ?? 0}/40`, icon: Star, color: "text-orange-500" },
+    { label: "Best Marks", value: `${stats?.bestMarks ?? 0}/40`, icon: Award, color: "text-emerald-500" },
     { label: "Time Typed", value: `${stats?.totalHours ?? 0}h`, icon: Clock, color: "text-purple-500" },
     { label: "Total Sessions", value: stats?.totalSessions ?? 0, icon: Hash, color: "text-indigo-500" },
     { label: "Avg Errors", value: stats?.avgErrors ?? 0, icon: AlertTriangle, color: "text-red-500" },
@@ -135,7 +137,7 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.label}
